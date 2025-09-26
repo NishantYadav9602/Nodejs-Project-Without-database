@@ -1,5 +1,4 @@
 const path = require('path');
-
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -8,19 +7,28 @@ const shopRoutes = require('./routes/shop');
 
 const app = express();
 
-//  This helps in parsing text kind of data in json format
+// Parse URL-encoded data (from forms)
 app.use(bodyParser.urlencoded({ extended: false }));
 
-//  This helps to make public folder as accesable directory
-//  Now we can use /css/man.css directl as it will be serched 
-//  in public folder only
-app.use(express.static(path.join(__dirname,'public')));
+// Make 'public' folder accessible
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/admin', adminData.rouutes);
+// Routes
+app.use('/admin', adminData.routes);
 app.use(shopRoutes);
 
+// 404 Page
 app.use((req, res, next) => {
-    res.status(404).sendFile(path.join(__dirname,'views','404.html'));
+    res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
 });
 
-app.listen(3000);
+// Listen on port 3000 on all network interfaces
+const PORT = 3000;
+app.listen(PORT, '0.0.0.0', (err) => {
+    if (err) {
+        console.error('Failed to start server:', err);
+    } else {
+        console.log(`Server is running and accessible at http://<EC2_PUBLIC_IP>:${PORT}`);
+    }
+});
+
