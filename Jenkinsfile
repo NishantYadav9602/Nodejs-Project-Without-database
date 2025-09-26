@@ -1,59 +1,51 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs "NodeJS_16" // Make sure this matches your Jenkins NodeJS installation
-    }
-
     environment {
-        APP_NAME = "nodejs-project"  // PM2 app name
-        APP_DIR = "/home/ubuntu/Nodejs-Project-Without-database" // Path on EC2
+        IMAGE_NAME = "my-node-app"
+        KUBE_NAMESPACE = "default"
+        DOCKER_USERNAME = "nishantyadav27"
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
+                git 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                dir("${APP_DIR}") {
-                    sh 'npm install'
-                }
+                sh 'npm install'
             }
         }
 
-        stage('Test') {
+        stage('Build Docker Image') {
             steps {
-                dir("${APP_DIR}") {
-                    // If you have tests, otherwise you can skip this
-                    sh 'npm test || echo "No tests found, skipping..."'
+                script {
+                    docker.build("${IMAGE_NAME}:latest")
                 }
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Push Docker Image') {
             steps {
-                dir("${APP_DIR}") {
-                    sh '''
-                        # Start or restart using PM2
-                        pm2 describe $APP_NAME || pm2 start app.js --name $APP_NAME
-                        pm2 restart $APP_NAME
-                        pm2 save
-                    '''
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
+                    sh "docker tag ${IMAGE_NAME}:latest ${USERNAME}/${IMAGE_NAME}:latest"
+                    sh "docker push ${USERNAME}/${IMAGE_NAME}:latest"
                 }
             }
         }
-    }
 
-    post {
-        success {
-            echo "Deployment Successful!"
-        }
-        failure {
-            echo "Deployment Failed!"
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                kubectl apply -f node-app.yaml
+                kubectl rollout status deployment/node-app-deployment
+                '''
+            }
         }
     }
 }
