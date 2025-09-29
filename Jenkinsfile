@@ -5,29 +5,20 @@ pipeline {
         IMAGE_NAME = "my-node-app"
         KUBE_NAMESPACE = "default"
         DOCKER_USERNAME = "nishantyadav27"
-        KUBECONFIG = "/var/lib/jenkins/.kube/config"  // Kubeconfig path for Jenkins user
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"  // Kubeconfig path
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
+                git branch: 'main', url: 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
-            }
-        }
-
-        stage('Set Minikube Docker Env') {
-            steps {
-                script {
-                    // Use Minikube's Docker daemon to build the image
-                    sh 'eval $(minikube -p minikube docker-env)'
-                }
             }
         }
 
