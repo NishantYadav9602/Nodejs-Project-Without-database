@@ -5,19 +5,29 @@ pipeline {
         IMAGE_NAME = "my-node-app"
         KUBE_NAMESPACE = "default"
         DOCKER_USERNAME = "nishantyadav27"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"  // Kubeconfig path for Jenkins user
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
+                git 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 sh 'npm install'
+            }
+        }
+
+        stage('Set Minikube Docker Env') {
+            steps {
+                script {
+                    // Use Minikube's Docker daemon to build the image
+                    sh 'eval $(minikube -p minikube docker-env)'
+                }
             }
         }
 
@@ -41,10 +51,10 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                kubectl apply -f node-app.yaml
-                kubectl rollout status deployment/node-app-deployment -n ${KUBE_NAMESPACE}
-                '''
+                script {
+                    sh "kubectl apply -f node-app.yaml --namespace=${KUBE_NAMESPACE} --validate=false"
+                    sh "kubectl rollout status deployment/node-app-deployment --namespace=${KUBE_NAMESPACE}"
+                }
             }
         }
     }
