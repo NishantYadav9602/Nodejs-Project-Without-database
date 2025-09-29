@@ -11,7 +11,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
+                git branch: 'main', url: 'https://github.com/NishantYadav9602/Nodejs-Project-Without-database.git'
             }
         }
 
@@ -43,7 +43,7 @@ pipeline {
             steps {
                 sh '''
                 kubectl apply -f node-app.yaml
-                kubectl rollout status deployment/node-app-deployment
+                kubectl rollout status deployment/node-app-deployment -n ${KUBE_NAMESPACE}
                 '''
             }
         }
